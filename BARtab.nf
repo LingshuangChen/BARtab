@@ -82,6 +82,9 @@ def helpMessage() {
                                     A cluster of barcode sequences can absorb a smaller one only if it is at least x times bigger [default = 3].
 
     Sincle-cell arguments:
+      --bam_unmapped             If BAM file is specified, include unmapped reads to extract barcodes [default = true]
+      --bam_contigs              Optional. If BAM file is specified, include reads mapping to these contigs (comma separated list). 
+                                    BAM file(s) must be indexed, i.e. input directory must contain .bam.bai file(s).
       --cb_umi_pattern           Cell barcode and UMI pattern on read 1, required for fastq input. 
                                     N = UMI position, C = cell barcode position [default = CCCCCCCCCCCCCCCCNNNNNNNNNNNN]
       --cellnumber               Number of cells expected in sample, only required when fastq provided. whitelist_indir and cellnumber are mutually exclusive
@@ -145,6 +148,9 @@ if (params.constants == "both" && params.barcode_length && params.min_readlength
 }
 if (params.mode == "single-cell" && params.input_type == "fastq" && params.pipeline != "saw" && !params.whitelist_indir && !params.cellnumber) {
   error "Error: Please provide either a whitelist or the expected number of cells for cell ID and UMI extraction."
+}
+if (params.input_type == "bam" && !params.bam_unmapped && !param.bam_contig) {
+  error "Error: either include unmapped reads, or specify a contig, or both."
 }
 
 //--------------------------------------------------------------------------------------

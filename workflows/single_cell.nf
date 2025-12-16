@@ -12,8 +12,6 @@ include { TRIM_BARCODE_LENGTH as TRIM_BARCODE_LENGTH_CLUSTER    } from '../modul
 include { BUILD_BOWTIE_INDEX                                    } from '../modules/local/build_bowtie_index'
 include { BOWTIE_ALIGN                                          } from '../modules/local/bowtie_align'
 include { FILTER_ALIGNMENTS                                     } from '../modules/local/filter_alignments'
-include { RENAME_READS_BAM                                      } from '../modules/local/rename_reads_bam'
-include { RENAME_READS_SPLITPIPE                                } from '../modules/local/rename_reads_splitpipe'
 include { RENAME_READS_SAW                                      } from '../modules/local/rename_reads_saw'
 include { REMOVE_PCR_CHIMERISM                                  } from '../modules/local/remove_pcr_chimerism'
 include { REMOVE_PCR_CHIMERISM as REMOVE_PCR_CHIMERISM_UNMAPPED } from '../modules/local/remove_pcr_chimerism'
@@ -37,6 +35,14 @@ workflow SINGLE_CELL {
                 // baseName already removes file type extension
                 .map { file -> tuple ( file.baseName.replaceAll( /\.bam/, '' ), file ) }
                 .ifEmpty { error "Cannot find any *.bam files in: ${params.indir}" }
+            // Random alignment retrieval only works for indexed BAM files. 
+            if ( params.bam_contigs ) {
+              indexChannel = Channel.fromPath ( "${params.indir}/*.bam.bai" )
+                  // creates the sample name
+                  // baseName already removes file type extension
+                  .map { file -> tuple ( file.baseName.replaceAll( /\.bam/, '' ), file ) }
+                  .ifEmpty { error "Cannot find any *.bam.bai files in: ${params.indir}" }
+            }
         } else if ( params.input_type == "fastq" & params.pipeline == "saw" ) {
             readsChannel = Channel.fromPath ( "${params.indir}/*.fq.gz" )
                 // baseName removes .gz
@@ -96,9 +102,14 @@ workflow SINGLE_CELL {
             }
 
         } else if (params.input_type == "bam") {
+             // extract unmapped reads with cell barcode and UMI and convert to fastq
+            index_ch = params.bam_contigs \
+                ? indexChannel \
+                : readsChannel.map { sid, bam -> tuple(sid, file("$projectDir/assets/NO_FILE")) }
+            bam_input_ch = readsChannel
+                .combine(index_ch, by: 0)
+            r2_fastq = BAM_TO_FASTQ ( bam_input_ch ).reads
 
-            // extract unmapped reads with cell barcode and UMI and convert to fastq
-            r2_fastq = BAM_TO_FASTQ ( readsChannel ).reads
         }
 
         trimmed_reads = CUTADAPT_READS ( r2_fastq ).reads
@@ -128,13 +139,6 @@ workflow SINGLE_CELL {
             // barcodes must align to start or end position of the reference, not the middle
             // necessary when extracting very short barcode reads from scRNA-seq data
             mapped_reads = params.barcode_length ? FILTER_ALIGNMENTS ( BOWTIE_ALIGN.out.mapped_reads ) : BOWTIE_ALIGN.out.mapped_reads
-
-            if ( params.input_type == "bam" & params.pipeline == "splitpipe") {
-                mapped_reads = RENAME_READS_SPLITPIPE ( mapped_reads.combine( readsChannel, by: 0 ) )
-            } else if ( params.input_type == "bam") {
-                // add CB and UMI info in header
-                mapped_reads = RENAME_READS_BAM ( mapped_reads.combine( readsChannel, by: 0 ) )
-            }
 
             if ( params.pipeline == "saw" ) {
                 // count barcodes from sam file
