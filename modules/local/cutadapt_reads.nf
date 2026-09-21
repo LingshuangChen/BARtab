@@ -32,10 +32,9 @@ process CUTADAPT_READS{
             if [ -s ${sample_id}.trimmed.fastq ]; then
                 pigz -f -p ${task.cpus} ${sample_id}.trimmed.fastq
             else
-                printf '%s\n' "No reads passed cutadapt filtering and trimming. Consider excluding sample ${sample_id}." >&2  # write error message to stderr
-                exit 1
+                printf '%s\n' "No reads passed cutadapt filtering and trimming for ${sample_id}." >&2
+                touch ${sample_id}.trimmed.fastq.gz
             fi
-            """
         }
         else if( params.constants == "both" )
             """
@@ -43,8 +42,8 @@ process CUTADAPT_READS{
             if [ -s ${sample_id}.trimmed.fastq ]; then
                 pigz -f -p ${task.cpus} ${sample_id}.trimmed.fastq
             else
-                printf '%s\n' "No reads passed cutadapt filtering and trimming. Consider excluding sample ${sample_id}." >&2  # write error message to stderr
-                exit 1
+                printf '%s\n' "No reads passed cutadapt filtering and trimming for ${sample_id}." >&2
+                touch ${sample_id}.trimmed.fastq.gz
             fi
             """
         else if( params.constants == "up" )
@@ -53,8 +52,8 @@ process CUTADAPT_READS{
             if [ -s ${sample_id}.trimmed.fastq ]; then
                 pigz -f -p ${task.cpus} ${sample_id}.trimmed.fastq
             else
-                printf '%s\n' "No reads passed cutadapt filtering and trimming. Consider excluding sample ${sample_id}." >&2  # write error message to stderr
-                exit 1
+                printf '%s\n' "No reads passed cutadapt filtering and trimming for ${sample_id}." >&2
+                touch ${sample_id}.trimmed.fastq.gz
             fi
             """
         else if( params.constants == "down" )
@@ -63,8 +62,8 @@ process CUTADAPT_READS{
             if [ -s ${sample_id}.trimmed.fastq ]; then
                 pigz -f -p ${task.cpus} ${sample_id}.trimmed.fastq
             else
-                printf '%s\n' "No reads passed cutadapt filtering and trimming. Consider excluding sample ${sample_id}." >&2  # write error message to stderr
-                exit 1
+                printf '%s\n' "No reads passed cutadapt filtering and trimming for ${sample_id}." >&2
+                touch ${sample_id}.trimmed.fastq.gz
             fi
             """
 }
