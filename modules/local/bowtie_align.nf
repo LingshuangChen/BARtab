@@ -1,4 +1,5 @@
 process BOWTIE_ALIGN {
+    errorStrategy 'ignore'
     tag "$sample_id"
     label "$params.mode" == "single-cell" ? "process_medium_sc" : "process_medium_bulk"
 
