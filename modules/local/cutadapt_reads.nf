@@ -49,7 +49,17 @@ process CUTADAPT_READS{
             """
         else if( params.constants == "up" )
             """
-            cutadapt -j ${task.cpus} -g "${params.upconstant};o=${params.up_coverage}" --trimmed-only --max-n=0 -m ${params.min_readlength} -e ${params.constantmismatches} ${max_len} ${reads} > ${sample_id}.trimmed.fastq 2> ${sample_id}.cutadapt_up.log
+            cutadapt -j ${task.cpus} \
+                -g "${params.upconstant};o=${params.up_coverage}" \
+                --trimmed-only \
+                --max-n=0 \
+                -m ${params.min_readlength} \
+                -l 40 \
+                -e ${params.constantmismatches} \
+                ${max_len} \
+                ${reads} > ${sample_id}.trimmed.fastq \
+                2> ${sample_id}.cutadapt_up.log
+
             if [ -s ${sample_id}.trimmed.fastq ]; then
                 pigz -f -p ${task.cpus} ${sample_id}.trimmed.fastq
             else
